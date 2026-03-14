@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --lo-fi-bg: #1a1a1c;
+  --lo-fi-card: #252528;
+  --lo-fi-muted: #3d3d42;
+  --lo-fi-warm: #e8d5c4;
+  --lo-fi-accent: #c9a86c;
+  --river: #2d3a4a;
+  --sos-red: #8b2635;
+}
+
+body {
+  background: var(--lo-fi-bg);
+  color: var(--lo-fi-warm);
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* Prevent pull-to-refresh / overscroll on mobile for stealth */
+html, body {
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Glowing orb pulse */
+@keyframes orb-pulse {
+  0%, 100% { box-shadow: 0 0 20px 8px rgba(201, 168, 108, 0.35); }
+  50% { box-shadow: 0 0 35px 15px rgba(201, 168, 108, 0.5); }
+}
+
+.orb-glow {
+  animation: orb-pulse 3s ease-in-out infinite;
+}
+
+/* River flow */
+@keyframes river-flow {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.river-flow {
+  animation: river-flow 25s linear infinite;
+}
