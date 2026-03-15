@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "行善台北",
+    "slug": "kindness-taipei",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1A1B26"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.kindnesstaipei.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "用於資源地圖依距離排序顯示附近心理資源。"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1A1B26"
+      },
+      "package": "com.kindnesstaipei.app",
+      "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"]
+    },
+    "plugins": ["expo-location"]
+  }
+}
