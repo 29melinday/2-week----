@@ -10,8 +10,10 @@ import TimeCapsule from "./TimeCapsule";
 import ResourceMap from "./ResourceMap";
 import StatsView from "./StatsView";
 import SettingsView from "./SettingsView";
+import TutorialOverlay from "./TutorialOverlay";
 import { checkSOS } from "@/lib/sos";
 import { getSettings } from "@/lib/settingsStorage";
+import { clearTutorialDone } from "./TutorialOverlay";
 import { incrementBreatheCount } from "@/lib/statsStorage";
 import { STRESS_KEYWORDS } from "@/lib/constants";
 import { getReadyToOpenCount } from "@/lib/capsuleStorage";
@@ -25,8 +27,23 @@ interface Message {
   timestamp: number;
 }
 
+const TUTORIAL_HINT: Record<number, string> = {
+  3: "試試：輸入並送出訊息",
+  4: "試試：點「記錄心情」",
+  5: "試試：點「呼吸」",
+  6: "試試：點「膠囊」",
+  7: "試試：點「地圖」",
+  8: "試試：點「紀錄」",
+  9: "試試：點「設定」",
+};
+
 interface XiaoXiaoViewProps {
   onBackToBus?: () => void;
+  tutorialStep?: number;
+  setTutorialStep?: (n: number | ((prev: number) => number)) => void;
+  showTutorial?: boolean;
+  onTutorialComplete?: () => void;
+  onRequestShowTutorial?: () => void;
 }
 
 function loadStones(): MoodStone[] {
@@ -40,7 +57,14 @@ function loadStones(): MoodStone[] {
   }
 }
 
-export default function XiaoXiaoView({ onBackToBus }: XiaoXiaoViewProps) {
+export default function XiaoXiaoView({
+  onBackToBus,
+  tutorialStep = 0,
+  setTutorialStep,
+  showTutorial = false,
+  onTutorialComplete,
+  onRequestShowTutorial,
+}: XiaoXiaoViewProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [stones, setStones] = useState<MoodStone[]>(loadStones);
@@ -132,6 +156,7 @@ export default function XiaoXiaoView({ onBackToBus }: XiaoXiaoViewProps) {
   const sendMessage = useCallback(async () => {
     const t = input.trim();
     if (!t) return;
+    if (showTutorial && tutorialStep === 3) setTutorialStep?.(4);
     checkAndTriggerSOS(t);
     checkStress(t);
     const userMsg: Message = {
@@ -173,7 +198,7 @@ export default function XiaoXiaoView({ onBackToBus }: XiaoXiaoViewProps) {
       ]);
     }
     setTimeout(() => setIsSpeaking(false), 1200);
-  }, [input, messages, checkAndTriggerSOS, checkStress]);
+  }, [input, messages, checkAndTriggerSOS, checkStress, showTutorial, tutorialStep, setTutorialStep]);
 
   return (
     <>
@@ -184,7 +209,8 @@ export default function XiaoXiaoView({ onBackToBus }: XiaoXiaoViewProps) {
             <button
               type="button"
               onClick={onBackToBus}
-              className="w-full py-3 px-4 text-left text-twilight-muted hover:text-twilight-text hover:bg-white/5 text-sm font-normal rounded-none transition-colors"
+              className="w-full py-3 px-4 text-left hover:bg-white/5 text-sm font-normal rounded-none transition-colors"
+              style={{ color: accentColor }}
             >
               ← 返回公車
             </button>
@@ -192,7 +218,11 @@ export default function XiaoXiaoView({ onBackToBus }: XiaoXiaoViewProps) {
               <button
                 type="button"
                 onClick={() => setCapsuleVisible(true)}
-                className="w-full py-2.5 px-4 text-left text-twilight-amber bg-twilight-amber/15 hover:bg-twilight-amber/25 border-b border-twilight-amber/30 text-sm font-normal transition-colors"
+                className="w-full py-2.5 px-4 text-left text-sm font-normal transition-colors border-b border-white/10"
+                style={{
+                  color: accentColor,
+                  backgroundColor: `${accentColor}15`,
+                }}
               >
                 ✨ 你有 {readyCapsuleCount} 個時光膠囊可以打開
               </button>
@@ -200,18 +230,30 @@ export default function XiaoXiaoView({ onBackToBus }: XiaoXiaoViewProps) {
           </div>
         )}
         <header className="shrink-0 p-3 border-b border-white/10">
-          <MoodRiver stones={stones} onAddStone={addStone} />
+          <MoodRiver
+            stones={stones}
+            onAddStone={(id, color) => {
+              if (showTutorial && tutorialStep === 4) setTutorialStep?.(5);
+              addStone(id, color);
+            }}
+            accentColor={accentColor}
+          />
         </header>
-
-        {/* 主區：發光圓球 + 對話（可捲動）；底部留空給固定 footer） */}
-        <main className="flex-1 flex flex-col items-center overflow-hidden min-h-0">
-          <div className="flex-shrink-0 py-6">
-            <XiaoXiaoOrb volumeLevel={volumeLevel} isSpeaking={isSpeaking} orbColor={orbColor} orbColorSecond={orbColorSecond} />
+        {showTutorial && tutorialStep >= 3 && tutorialStep <= 9 && TUTORIAL_HINT[tutorialStep] && (
+          <div
+            className="shrink-0 py-2 px-4 border-b border-white/10 text-center text-sm"
+            style={{ color: accentColor, backgroundColor: `${accentColor}12` }}
+          >
+            → {TUTORIAL_HINT[tutorialStep]}
           </div>
-          <div className="w-full max-w-lg flex-1 flex flex-col min-h-0 px-4 relative pb-2">
+        )}
+
+        {/* 主區：只有對話可捲動 */}
+        <main className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          <div className="w-full max-w-lg flex-1 flex flex-col min-h-0 px-4 mx-auto relative pb-2">
             <div
               ref={chatScrollRef}
-              className="flex-1 overflow-y-auto space-y-3 py-2 pb-20 scroll-smooth"
+              className="flex-1 overflow-y-auto space-y-3 py-2 pb-4 scroll-smooth"
               role="log"
               aria-label="與小曉的對話"
             >
@@ -246,93 +288,124 @@ export default function XiaoXiaoView({ onBackToBus }: XiaoXiaoViewProps) {
                   exit={{ opacity: 0, scale: 0.8 }}
                   onClick={scrollToTop}
                   aria-label="捲動到最上方"
-                  className="absolute left-6 top-20 z-10 rounded-full bg-twilight-bg/90 backdrop-blur border border-white/20 p-2.5 text-twilight-muted hover:text-twilight-text shadow-soft min-h-[44px] min-w-[44px] flex items-center justify-center touch-manipulation"
+                  className="absolute left-6 top-4 z-10 rounded-full bg-twilight-bg/90 backdrop-blur border p-2.5 shadow-soft min-h-[44px] min-w-[44px] flex items-center justify-center touch-manipulation hover:opacity-90 transition-opacity"
+                  style={{ borderColor: `${accentColor}66`, color: accentColor }}
                 >
                   <span className="text-lg leading-none">↑</span>
                 </motion.button>
               )}
             </AnimatePresence>
-            <div className="flex gap-2 py-4">
-              <input
-                ref={inputRef}
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
-                placeholder="跟小曉說說話... (Enter 送出)"
-                aria-label="輸入訊息"
-                className="flex-1 rounded-3xl bg-white/10 backdrop-blur-md border border-white/20 px-4 py-3 min-h-[48px] text-twilight-text placeholder:text-twilight-muted focus:outline-none focus:ring-2 focus:ring-twilight-amber/40 font-normal"
-              />
-              <button
-                type="button"
-                onClick={sendMessage}
-                aria-label="送出訊息"
-                className="rounded-3xl bg-twilight-amber/30 hover:bg-twilight-amber/50 border border-white/20 backdrop-blur-md px-5 py-3 min-h-[48px] text-twilight-text font-medium shadow-soft touch-manipulation active:scale-[0.98] transition-transform"
-                style={{
-                  color: accentColor,
-                  borderColor: `${accentColor}66`,
-                  backgroundColor: `${accentColor}1a`,
-                }}
-              >
-                送出
-              </button>
+            {/* 小曉頭像（左下）+ 輸入列 */}
+            <div className="flex gap-2 py-3 items-end flex-nowrap">
+              <div className="shrink-0 self-center" aria-hidden>
+                <XiaoXiaoOrb volumeLevel={volumeLevel} isSpeaking={isSpeaking} orbColor={orbColor} orbColorSecond={orbColorSecond} size="small" />
+              </div>
+              <div className="flex-1 flex gap-2 min-w-0">
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
+                  placeholder="跟小曉說說話... (Enter 送出)"
+                  aria-label="輸入訊息"
+                  className="flex-1 rounded-3xl bg-white/10 backdrop-blur-md border px-4 py-3 min-h-[48px] text-twilight-text placeholder:text-twilight-muted font-normal min-w-0"
+                  style={{
+                    borderColor: "rgba(255,255,255,0.2)",
+                    outline: "none",
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.boxShadow = `0 0 0 2px ${accentColor}60`;
+                    e.currentTarget.style.borderColor = `${accentColor}66`;
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.boxShadow = "";
+                    e.currentTarget.style.borderColor = "rgba(255,255,255,0.2)";
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={sendMessage}
+                  aria-label="送出訊息"
+                  className="rounded-3xl border backdrop-blur-md px-4 py-3 min-h-[48px] font-medium shadow-soft touch-manipulation active:scale-[0.98] transition-transform shrink-0"
+                  style={{
+                    color: accentColor,
+                    borderColor: `${accentColor}66`,
+                    backgroundColor: `${accentColor}1a`,
+                  }}
+                >
+                  送出
+                </button>
+              </div>
             </div>
           </div>
         </main>
 
-        {/* 底部：導航固定於螢幕下方 */}
-        <footer className="fixed bottom-0 left-0 right-0 z-10 flex flex-wrap justify-center gap-2 p-4 border-t border-white/10 bg-twilight-bg/95 backdrop-blur safe-area-pb">
+        {/* 底部：單行導航（不換行） */}
+        <footer className="fixed bottom-0 left-0 right-0 z-10 flex flex-nowrap justify-center items-center gap-1.5 px-2 py-2 border-t border-white/10 bg-twilight-bg/95 backdrop-blur safe-area-pb overflow-x-auto">
           <button
             type="button"
-            onClick={() => setBreatheVisible(true)}
-            aria-label="開啟呼吸練習"
-            className="rounded-3xl px-5 py-3 min-h-[48px] text-sm text-twilight-text border border-white/20 bg-white/10 hover:bg-white/20 font-normal transition-colors touch-manipulation active:scale-[0.98]"
-          >
-            呼吸練習
-          </button>
-          <button
-            type="button"
-            onClick={() => setCapsuleVisible(true)}
-            aria-label="開啟時光膠囊"
-            className="rounded-3xl px-5 py-3 min-h-[48px] text-sm text-twilight-text border border-white/20 bg-white/10 hover:bg-white/20 font-normal transition-colors touch-manipulation active:scale-[0.98]"
-            
-          >
-            時光膠囊
-          </button>
-          <button
-            type="button"
-            onClick={() => setMapVisible(true)}
-            aria-label="開啟資源地圖"
-            className="rounded-3xl px-5 py-3 min-h-[48px] text-sm text-twilight-text border border-white/20 bg-white/10 hover:bg-white/20 font-normal transition-colors touch-manipulation active:scale-[0.98]"
-          >
-            資源地圖
-          </button>
-          <button
-            type="button"
-            onClick={() => setStatsVisible(true)}
-            aria-label="我的紀錄"
-            className="rounded-3xl px-5 py-3 min-h-[48px] text-sm border font-normal transition-colors touch-manipulation active:scale-[0.98]"
-            style={{
-              color: accentColor,
-              borderColor: `${accentColor}66`,
-              backgroundColor: `${accentColor}1a`,
+            onClick={() => {
+              if (showTutorial && tutorialStep === 5) setTutorialStep?.(6);
+              setBreatheVisible(true);
             }}
+            aria-label="開啟呼吸練習"
+            className="rounded-2xl px-3 py-2 min-h-[40px] text-xs font-normal border shrink-0 touch-manipulation active:scale-[0.98] transition-transform whitespace-nowrap"
+            style={{ color: accentColor, borderColor: `${accentColor}66`, backgroundColor: `${accentColor}12` }}
           >
-            我的紀錄
+            呼吸
           </button>
           <button
             type="button"
             onClick={() => {
+              if (showTutorial && tutorialStep === 6) setTutorialStep?.(7);
+              setCapsuleVisible(true);
+            }}
+            aria-label="開啟時光膠囊"
+            className="rounded-2xl px-3 py-2 min-h-[40px] text-xs font-normal border shrink-0 touch-manipulation active:scale-[0.98] whitespace-nowrap"
+            style={{ color: accentColor, borderColor: `${accentColor}66`, backgroundColor: `${accentColor}12` }}
+          >
+            膠囊
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (showTutorial && tutorialStep === 7) setTutorialStep?.(8);
+              setMapVisible(true);
+            }}
+            aria-label="開啟資源地圖"
+            className="rounded-2xl px-3 py-2 min-h-[40px] text-xs font-normal border shrink-0 touch-manipulation active:scale-[0.98] whitespace-nowrap"
+            style={{ color: accentColor, borderColor: `${accentColor}66`, backgroundColor: `${accentColor}12` }}
+          >
+            地圖
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (showTutorial && tutorialStep === 8) setTutorialStep?.(9);
+              setStatsVisible(true);
+            }}
+            aria-label="我的紀錄"
+            className="rounded-2xl px-3 py-2 min-h-[40px] text-xs font-normal border shrink-0 touch-manipulation active:scale-[0.98] whitespace-nowrap"
+            style={{ color: accentColor, borderColor: `${accentColor}66`, backgroundColor: `${accentColor}12` }}
+          >
+            紀錄
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (showTutorial && tutorialStep === 9) setTutorialStep?.(10);
               setSettingsVisible(true);
             }}
             aria-label="設定"
-            className="rounded-3xl px-5 py-3 min-h-[48px] text-sm text-twilight-text border border-white/20 bg-white/10 hover:bg-white/20 font-normal transition-colors touch-manipulation active:scale-[0.98]"
+            className="rounded-2xl px-3 py-2 min-h-[40px] text-xs font-normal border shrink-0 touch-manipulation active:scale-[0.98] whitespace-nowrap"
+            style={{ color: accentColor, borderColor: `${accentColor}66`, backgroundColor: `${accentColor}12` }}
           >
             設定
           </button>
         </footer>
         {/* Spacer so content isn't hidden behind fixed footer */}
-        <div className="h-24 shrink-0" aria-hidden />
+        <div className="h-16 shrink-0" aria-hidden />
       </div>
 
       <BreatheMode
@@ -358,8 +431,32 @@ export default function XiaoXiaoView({ onBackToBus }: XiaoXiaoViewProps) {
           setOrbColor(s.orbColor);
           setOrbColorSecond(s.orbColorSecond);
         }}
+        onShowTutorialAgain={() => {
+          clearTutorialDone();
+          onRequestShowTutorial?.();
+          setSettingsVisible(false);
+        }}
+        onClearAllData={() => {
+          setStones([]);
+          setMessages([]);
+          setReadyCapsuleCount(0);
+          const s = getSettings();
+          setAccentColor(s.accentColor);
+          setOrbColor(s.orbColor);
+          setOrbColorSecond(s.orbColorSecond);
+        }}
       />
       <SOSOverlay visible={sosVisible} onDismiss={() => setSosVisible(false)} />
+      {showTutorial && tutorialStep === 10 && (
+        <TutorialOverlay
+          visible
+          step={10}
+          setStep={() => {}}
+          onClose={onTutorialComplete ?? (() => {})}
+          showWhenSteps={[10]}
+          accentColor={accentColor}
+        />
+      )}
     </>
   );
 }
