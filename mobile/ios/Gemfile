@@ -1,0 +1,4 @@
+# CocoaPods for iOS. Run: bundle install && bundle exec pod install
+source 'https://rubygems.org'
+
+gem 'cocoapods', '~> 1.15'
