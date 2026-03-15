@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { getSettings, saveSettings } from "@/lib/settingsStorage";
-import { clearTutorialDone } from "./TutorialOverlay";
+import { clearAllAppData } from "@/lib/clearAllData";
 
 const PRESET_ACCENT = [
   { name: "琥珀", value: "#F2C94C" },
@@ -18,13 +18,16 @@ interface SettingsViewProps {
   visible: boolean;
   onClose: () => void;
   onSettingsChange?: () => void;
+  onShowTutorialAgain?: () => void;
+  onClearAllData?: () => void;
 }
 
-export default function SettingsView({ visible, onClose, onSettingsChange }: SettingsViewProps) {
+export default function SettingsView({ visible, onClose, onSettingsChange, onShowTutorialAgain, onClearAllData }: SettingsViewProps) {
   const [unlockCode, setUnlockCode] = useState("");
   const [accentColor, setAccentColor] = useState("");
   const [orbColor, setOrbColor] = useState("");
   const [orbColorSecond, setOrbColorSecond] = useState("");
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   useEffect(() => {
     if (visible) {
@@ -163,18 +166,55 @@ export default function SettingsView({ visible, onClose, onSettingsChange }: Set
         <section className="glass-card p-4 mb-4">
           <h3 className="text-twilight-text font-medium mb-2">使用教學</h3>
           <p className="text-xs text-twilight-muted mb-2">
-            重設後，下次進入公車畫面時會再顯示一次進入方式與功能介紹。
+            點擊後會立即回到公車畫面並顯示教學，無需重新整理。
           </p>
           <button
             type="button"
             onClick={() => {
-              clearTutorialDone();
-              onClose();
+              onShowTutorialAgain?.();
             }}
             className="rounded-2xl px-4 py-2 text-sm text-twilight-text border border-white/20 bg-white/10 hover:bg-white/20"
           >
             重新顯示使用教學
           </button>
+        </section>
+
+        <section className="glass-card p-4 mb-4">
+          <h3 className="text-twilight-text font-medium mb-2">清除所有資料</h3>
+          <p className="text-xs text-twilight-muted mb-2">
+            刪除心情石頭、時光膠囊、呼吸紀錄、設定與教學狀態，無法復原。
+          </p>
+          {!showClearConfirm ? (
+            <button
+              type="button"
+              onClick={() => setShowClearConfirm(true)}
+              className="rounded-2xl px-4 py-2 text-sm text-twilight-text border border-white/20 bg-white/10 hover:bg-white/20"
+            >
+              清除所有資料
+            </button>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  clearAllAppData();
+                  onClearAllData?.();
+                  setShowClearConfirm(false);
+                  onClose();
+                }}
+                className="rounded-2xl px-4 py-2 text-sm border bg-red-500/20 text-red-300 border-red-400/40"
+              >
+                確定清除
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowClearConfirm(false)}
+                className="rounded-2xl px-4 py-2 text-sm text-twilight-text border border-white/20 bg-white/10"
+              >
+                取消
+              </button>
+            </div>
+          )}
         </section>
       </div>
     </motion.div>

@@ -26,6 +26,7 @@ export interface MoodStone {
 interface MoodRiverProps {
   stones: MoodStone[];
   onAddStone: (moodId: string, color: string) => void;
+  accentColor?: string;
 }
 
 const ROCK_SIZES = [
@@ -83,9 +84,10 @@ function buildSegment(
   return out;
 }
 
-export default function MoodRiver({ stones, onAddStone }: MoodRiverProps) {
+export default function MoodRiver({ stones, onAddStone, accentColor: accentProp }: MoodRiverProps) {
   const [showPicker, setShowPicker] = useState(false);
   const [justDropped, setJustDropped] = useState(false);
+  const accentColor = accentProp ?? getSettings().accentColor;
 
   const handlePick = (moodId: string, color: string) => {
     onAddStone(moodId, color);
@@ -99,9 +101,8 @@ export default function MoodRiver({ stones, onAddStone }: MoodRiverProps) {
     [stones]
   );
   const lastId = stones.length > 0 ? stones[stones.length - 1].id : "";
-  const [accentColor, setAccentColor] = useState(getSettings().accentColor);
   return (
-    <div className="w-full">
+    <div className="w-full max-w-xl mx-auto">
       <div className="flex items-center justify-between px-2 py-2">
         <span className="text-xs text-twilight-muted font-light">心情點擊</span>
         <button
@@ -138,7 +139,7 @@ export default function MoodRiver({ stones, onAddStone }: MoodRiverProps) {
           ))}
         </motion.div>
       )}
-      <div className="relative w-screen left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] min-h-[160px] overflow-hidden bg-gradient-to-r from-twilight-riverStart/50 to-twilight-riverEnd/50 border-y border-white/20">
+      <div className="relative w-full min-h-[140px] overflow-hidden rounded-2xl bg-gradient-to-r from-twilight-riverStart/50 to-twilight-riverEnd/50 border border-white/20">
         {/* Flow lines */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (

@@ -15,6 +15,7 @@ interface XiaoXiaoOrbProps {
   isSpeaking?: boolean;
   orbColor?: string;
   orbColorSecond?: string;
+  size?: "default" | "small";
 }
 
 export default function XiaoXiaoOrb({
@@ -22,13 +23,15 @@ export default function XiaoXiaoOrb({
   isSpeaking = false,
   orbColor = "#F2C94C",
   orbColorSecond = "#BB9AF7",
+  size = "default",
 }: XiaoXiaoOrbProps) {
   const scale = 1 + (isSpeaking ? 0.08 + volumeLevel * 0.12 : 0);
   const rgb = hexToRgb(orbColor);
+  const isSmall = size === "small";
 
   return (
     <motion.div
-      className="relative flex items-center justify-center w-48 h-48 md:w-64 md:h-64"
+      className={`relative flex items-center justify-center ${isSmall ? "w-14 h-14" : "w-48 h-48 md:w-64 md:h-64"}`}
       animate={{ scale: 1 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
     >

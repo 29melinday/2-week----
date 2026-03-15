@@ -15,7 +15,7 @@ export async function sendToGemini(
   messages: ChatMessage[],
   systemInstruction?: string
 ): Promise<string> {
-  const model = "gemini-1.5-flash";
+  const model = "gemini-2.5-flash";
   const url = `${GEMINI_API_URL}/${model}:generateContent?key=${apiKey}`;
   const contents = messages.map((m) => ({
     role: m.role === "user" ? "user" : "model",

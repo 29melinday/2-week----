@@ -18,15 +18,20 @@ interface BusItem {
 
 interface BusTrackerProps {
   onLongPressTrigger: () => void;
+  tutorialStep?: number;
+  accentColor?: string;
 }
 
-export default function BusTracker({ onLongPressTrigger }: BusTrackerProps) {
+export default function BusTracker({ onLongPressTrigger, tutorialStep = 0, accentColor: accentProp }: BusTrackerProps) {
   const [data, setData] = useState<BusItem[]>([]);
   const [lastUpdate, setLastUpdate] = useState("1分鐘前");
   const [loading, setLoading] = useState(true);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressTarget = useRef<EventTarget | null>(null);
-  const [accentColor, setAccentColor] = useState(getSettings().accentColor);
+  const [accentColor, setAccentColor] = useState(accentProp ?? getSettings().accentColor);
+  useEffect(() => {
+    if (accentProp) setAccentColor(accentProp);
+  }, [accentProp]);
   const fetchBus = useCallback(async () => {
     try {
       const res = await fetch("/api/bus");
@@ -110,7 +115,12 @@ export default function BusTracker({ onLongPressTrigger }: BusTrackerProps) {
       <footer className="p-4 border-t border-white/10 text-center">
         <button
           type="button"
-          className="w-full py-2 rounded-3xl text-twilight-muted hover:text-twilight-text hover:bg-white/5 text-sm font-normal border border-transparent hover:border-white/10 transition-colors"
+          className={`w-full py-2 rounded-3xl text-sm font-normal border transition-colors ${tutorialStep === 1 ? "animate-pulse" : "text-twilight-muted hover:text-twilight-text hover:bg-white/5 hover:border-white/10"}`}
+          style={
+            tutorialStep === 1
+              ? { color: accentColor, borderColor: `${accentColor}99`, backgroundColor: `${accentColor}15` }
+              : { borderColor: "transparent" }
+          }
           onMouseDown={handleLongPressStart}
           onMouseUp={handleLongPressEnd}
           onMouseLeave={handleLongPressEnd}
@@ -118,7 +128,7 @@ export default function BusTracker({ onLongPressTrigger }: BusTrackerProps) {
           onTouchEnd={handleLongPressEnd}
           onTouchCancel={handleLongPressEnd}
         >
-          更新時間：{lastUpdate}
+          {tutorialStep === 1 ? "👆 長按這裡 3 秒" : `更新時間：${lastUpdate}`}
         </button>
       </footer>
     </div>
