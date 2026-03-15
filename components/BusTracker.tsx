@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { getSettings } from "@/lib/settingsStorage";
 
 const ROUTES = [
   { name: "307", from: "板橋前站", to: "莊敬里" },
@@ -25,7 +26,7 @@ export default function BusTracker({ onLongPressTrigger }: BusTrackerProps) {
   const [loading, setLoading] = useState(true);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressTarget = useRef<EventTarget | null>(null);
-
+  const [accentColor, setAccentColor] = useState(getSettings().accentColor);
   const fetchBus = useCallback(async () => {
     try {
       const res = await fetch("/api/bus");
@@ -74,31 +75,31 @@ export default function BusTracker({ onLongPressTrigger }: BusTrackerProps) {
   }));
 
   return (
-    <div className="min-h-screen bg-lo-fi-bg text-lo-fi-warm flex flex-col">
-      <header className="p-4 border-b border-lo-fi-muted">
-        <h1 className="text-xl font-semibold text-lo-fi-warm">TP Bus Tracker</h1>
-        <p className="text-sm text-lo-fi-muted mt-1">台北公車通 · 即時到站</p>
+    <div className="min-h-screen bg-twilight-bg text-twilight-text flex flex-col">
+      <header className="p-4 border-b border-white/10">
+        <h1 className="text-xl font-semibold text-twilight-text">TP Bus Tracker</h1>
+        <p className="text-sm text-twilight-muted mt-1 font-normal">台北公車通 · 即時到站</p>
       </header>
 
       <main className="flex-1 p-4 space-y-6">
         {loading ? (
-          <div className="text-lo-fi-muted animate-pulse">載入中...</div>
+          <div className="text-twilight-muted animate-pulse font-normal">載入中...</div>
         ) : (
           grouped.map((group) => (
             <motion.section
               key={group.name}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-lo-fi-card rounded-xl p-4 border border-lo-fi-muted/50"
+              className="glass-card p-4"
             >
-              <h2 className="text-lg font-medium text-lo-fi-accent mb-2">
+              <h2 className="text-lg font-semibold text-twilight-amber mb-2" style={{color: accentColor}}>
                 {group.name} · {group.from} → {group.to}
               </h2>
-              <ul className="space-y-2">
+              <ul className="space-y-2 leading-relaxed">
                 {(group.items.length ? group.items : [{ routeName: group.name, stopName: "—", estimateText: "—" }]).map((item, i) => (
-                  <li key={i} className="flex justify-between text-sm">
-                    <span className="text-lo-fi-warm/90">{item.stopName}</span>
-                    <span className="text-lo-fi-accent font-medium">{item.estimateText}</span>
+                  <li key={i} className="flex justify-between text-sm font-normal">
+                    <span className="text-twilight-text/90" >{item.stopName}</span>
+                    <span className="text-twilight-amber font-medium" style={{color: accentColor}}>{item.estimateText}</span>
                   </li>
                 ))}
               </ul>
@@ -106,10 +107,10 @@ export default function BusTracker({ onLongPressTrigger }: BusTrackerProps) {
           ))
         )}
       </main>
-
-      <footer className="p-4 border-t border-lo-fi-muted text-center">
-        <span
-          className="text-lo-fi-muted text-sm select-none cursor-default"
+      <footer className="p-4 border-t border-white/10 text-center">
+        <button
+          type="button"
+          className="w-full py-2 rounded-3xl text-twilight-muted hover:text-twilight-text hover:bg-white/5 text-sm font-normal border border-transparent hover:border-white/10 transition-colors"
           onMouseDown={handleLongPressStart}
           onMouseUp={handleLongPressEnd}
           onMouseLeave={handleLongPressEnd}
@@ -118,7 +119,7 @@ export default function BusTracker({ onLongPressTrigger }: BusTrackerProps) {
           onTouchCancel={handleLongPressEnd}
         >
           更新時間：{lastUpdate}
-        </span>
+        </button>
       </footer>
     </div>
   );

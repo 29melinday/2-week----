@@ -1,43 +1,68 @@
 "use client";
 
-import { useRef, useEffect, useState } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 
-interface XiaoXiaoOrbProps {
-  /** 0–1 音量等級，用於縮放 */
-  volumeLevel?: number;
-  /** 是否正在說話（呼吸感） */
-  isSpeaking?: boolean;
+function hexToRgb(hex: string): string {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result
+    ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}`
+    : "242, 201, 76";
 }
 
-export default function XiaoXiaoOrb({ volumeLevel = 0, isSpeaking = false }: XiaoXiaoOrbProps) {
-  const [scale, setScale] = useState(1);
-  const raf = useRef<number>(0);
+interface XiaoXiaoOrbProps {
+  volumeLevel?: number;
+  isSpeaking?: boolean;
+  orbColor?: string;
+  orbColorSecond?: string;
+}
 
-  useEffect(() => {
-    const base = 1 + (volumeLevel * 0.4);
-    setScale(base);
-  }, [volumeLevel]);
+export default function XiaoXiaoOrb({
+  volumeLevel = 0,
+  isSpeaking = false,
+  orbColor = "#F2C94C",
+  orbColorSecond = "#BB9AF7",
+}: XiaoXiaoOrbProps) {
+  const scale = 1 + (isSpeaking ? 0.08 + volumeLevel * 0.12 : 0);
+  const rgb = hexToRgb(orbColor);
 
   return (
     <motion.div
       className="relative flex items-center justify-center w-48 h-48 md:w-64 md:h-64"
-      animate={{ scale: isSpeaking ? scale : 1 }}
+      animate={{ scale: 1 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
     >
       <motion.div
-        className="absolute inset-0 rounded-full bg-gradient-to-br from-lo-fi-accent/60 to-lo-fi-accent/20 orb-glow"
-        animate={{
-          scale: [1, 1.05, 1],
-          boxShadow: [
-            "0 0 20px 8px rgba(201, 168, 108, 0.35)",
-            "0 0 40px 18px rgba(201, 168, 108, 0.45)",
-            "0 0 20px 8px rgba(201, 168, 108, 0.35)",
-          ],
+        className="absolute inset-0 rounded-full backdrop-blur-sm"
+        style={{
+          background: `linear-gradient(to bottom right, ${orbColor}b3, ${orbColorSecond}80)`,
         }}
-        transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+        animate={{
+          scale: isSpeaking ? [1, scale, 1] : [1, 1.05, 1],
+          boxShadow: isSpeaking
+            ? [
+                `0 0 50px 20px rgba(${rgb}, 0.35)`,
+                `0 0 70px 28px rgba(${rgb}, 0.5)`,
+                `0 0 50px 20px rgba(${rgb}, 0.35)`,
+              ]
+            : [
+                `0 0 40px 14px rgba(${rgb}, 0.25)`,
+                `0 0 55px 20px rgba(${rgb}, 0.35)`,
+                `0 0 40px 14px rgba(${rgb}, 0.25)`,
+              ],
+        }}
+        transition={{
+          duration: isSpeaking ? 0.8 : 3,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
       />
-      <div className="relative w-3/4 h-3/4 rounded-full bg-gradient-to-br from-lo-fi-warm/30 to-lo-fi-accent/40 backdrop-blur-sm" />
+      <div
+        className="relative w-3/4 h-3/4 rounded-full backdrop-blur-sm border border-white/10"
+        style={{
+          background: `linear-gradient(to bottom right, ${orbColor}66, ${orbColorSecond}4d)`,
+        }}
+      />
     </motion.div>
   );
 }

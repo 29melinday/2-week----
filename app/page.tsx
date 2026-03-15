@@ -1,16 +1,22 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import BusTracker from "@/components/BusTracker";
 import Calculator from "@/components/Calculator";
 import XiaoXiaoView from "@/components/XiaoXiaoView";
+import TutorialOverlay, { tutorialDone } from "@/components/TutorialOverlay";
 
 type Screen = "bus" | "calculator" | "xiaoxiao";
 
 export default function Home() {
   const [screen, setScreen] = useState<Screen>("bus");
   const [showUnlockTransition, setShowUnlockTransition] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(false);
+
+  useEffect(() => {
+    setShowTutorial(!tutorialDone());
+  }, []);
 
   const openCalculator = useCallback(() => setScreen("calculator"), []);
   const unlockToXiaoXiao = useCallback(() => {
@@ -32,6 +38,10 @@ export default function Home() {
             transition={{ duration: 0.2 }}
           >
             <BusTracker onLongPressTrigger={openCalculator} />
+            <TutorialOverlay
+              visible={showTutorial}
+              onClose={() => setShowTutorial(false)}
+            />
           </motion.div>
         )}
 
@@ -54,19 +64,16 @@ export default function Home() {
         {showUnlockTransition && (
           <motion.div
             key="transition"
-            className="fixed inset-0 z-[60] flex items-center justify-center bg-lo-fi-bg"
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-twilight-bg"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
             <motion.div
-              className="w-4 h-4 rounded-full bg-lo-fi-accent/80"
+              className="w-4 h-4 rounded-full bg-twilight-amber/80"
               initial={{ scale: 0.1, opacity: 1 }}
-              animate={{
-                scale: 80,
-                opacity: [1, 1, 0.8],
-                transition: { duration: 1.2, ease: "easeInOut" },
-              }}
+              animate={{ scale: 80, opacity: [1, 1, 0.8] }}
+              transition={{ duration: 1.2, ease: "easeInOut" }}
             />
           </motion.div>
         )}
@@ -78,7 +85,7 @@ export default function Home() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.4 }}
           >
-            <XiaoXiaoView />
+            <XiaoXiaoView onBackToBus={() => setScreen("bus")} />
           </motion.div>
         )}
       </AnimatePresence>

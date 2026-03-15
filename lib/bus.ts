@@ -58,9 +58,9 @@ export async function fetchBusEstimates(): Promise<{ routeName: string; stopName
     });
     const data = (await res.json()) as BusEstimate[];
     const list = (data || []).slice(0, 6).map((d) => ({
-      routeName: d.routeName?.Zh_tw || "307",
-      stopName: d.StopName?.Zh_tw || "捷運西門站",
-      estimateText: formatEstimate(d.EstimateTime ?? 0),
+      routeName: d.routeName || "307",
+      stopName: d.stopName|| "捷運西門站",
+      estimateText: formatEstimate(d.estimate ?? 0),
     }));
     return list.length ? list : getMockEstimates().slice(0, 6).map((m) => ({
       routeName: m.routeName,
